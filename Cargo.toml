@@ -1,0 +1,7 @@
+[package]
+name = "sneake"
+version = "0.1.0"
+authors = ["Markus Dittmann <dmarku@posteo.de>"]
+edition = "2018"
+
+[dependencies]
