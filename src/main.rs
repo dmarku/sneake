@@ -27,12 +27,14 @@ fn main() {
                 );
             });
         }
-        if let Some(button) = event.press_args() {
-            if button == Button::Mouse(MouseButton::Left) {
-                x = x + 10.0;
-            }
-            if button == Button::Mouse(MouseButton::Right) {
-                x = x - 10.0;
+        if let Some(Button::Keyboard(key)) = event.press_args() {
+            match key {
+                Key::Left => x -= 10.0,
+                Key::Right => x += 10.0,
+                Key::Up => y -= 10.0,
+                Key::Down => y += 10.0,
+                // ignore any other key
+                _ => (),
             }
         }
     }

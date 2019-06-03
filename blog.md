@@ -16,4 +16,4 @@
   - learned that glutin is a portable OpenGL context creation library in pure Rust, similar to glut
   - learned that piston's graphics interface can be implemented with different backends
 
-- handle mouse button presses
+- move on pressing arrow keys
