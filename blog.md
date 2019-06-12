@@ -1,5 +1,12 @@
 # Development Log
 
+## 2019-06-12
+
+- check out Nannou <https://nannou.cc>
+- app loop is inspired by functional reactive programming, looks neat
+- intial build takes a while since it requires _a lot_ of libraries
+- draw a rectangle; not at the position I expected...
+
 ## 2019-06-03
 
 - goal: rebuild snake game in Rust and Piston

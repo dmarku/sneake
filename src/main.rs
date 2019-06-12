@@ -1,41 +1,31 @@
-extern crate piston_window;
-
-use piston_window::*;
+use nannou::prelude::*;
 
 fn main() {
+    nannou::app(model).update(update).view(view).run();
+}
 
-    let mut x = 50.0;
-    let mut y = 50.0;
+struct Model {}
 
-    let mut window: PistonWindow = WindowSettings::new("Sneake", (800, 600))
-        .exit_on_esc(true)
-        .graphics_api(OpenGL::V3_2)
+/* initial model creation; this is similar to Arduino's `setup()` */
+fn model(_app: &App) -> Model {
+    _app.new_window()
+        .with_dimensions(800, 600)
+        .with_title("Sneake")
         .build()
         .unwrap();
+    Model {}
+}
 
-    let rect_color: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+fn update(_app: &App, _model: &mut Model, _update: Update) {}
 
-    while let Some(event) = window.next() {
-        if let Some(_) = event.render_args() {
-            window.draw_2d(&event, |context, graphics, _device| {
-                clear([1.0; 4], graphics);
-                rectangle(
-                    rect_color,
-                    rectangle::square(x, y, 50.0),
-                    context.transform,
-                    graphics,
-                );
-            });
-        }
-        if let Some(Button::Keyboard(key)) = event.press_args() {
-            match key {
-                Key::Left => x -= 10.0,
-                Key::Right => x += 10.0,
-                Key::Up => y -= 10.0,
-                Key::Down => y += 10.0,
-                // ignore any other key
-                _ => (),
-            }
-        }
-    }
+fn view(_app: &App, _model: &Model, frame: Frame) -> Frame {
+    let draw = _app.draw();
+
+    draw.background().color(DARK_BLUE);
+
+    draw.quad().x_y(10.0, 10.0).color(WHITE);
+
+    draw.to_frame(_app, &frame).unwrap();
+
+    frame
 }
