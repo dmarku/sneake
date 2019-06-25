@@ -55,14 +55,11 @@ fn model(_app: &App) -> Model {
         .build()
         .unwrap();
 
-    let head = Vector2::new(5.0, 5.0);
-    let tail = VecDeque::with_capacity(20);
-
     let snake = Snake {
-        head,
+        head: Vector2::new(5.0, 5.0),
         direction: Direction::Right,
         max_length: 3,
-        tail,
+        tail: VecDeque::with_capacity(20),
     };
 
     Model { scale: 24.0, snake }
@@ -93,22 +90,24 @@ fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
 
     let pos = model.snake.head * model.scale;
 
-    let pos_eye = match model.snake.direction {
-        Direction::Up => Vector2::new(pos.x + 0.4 * model.scale, pos.y + 0.7 * model.scale),
-        Direction::Down => Vector2::new(pos.x + 0.5 * model.scale, pos.y + 0.1 * model.scale),
-        Direction::Left => Vector2::new(pos.x + 0.1 * model.scale, pos.y + 0.4 * model.scale),
-        Direction::Right => Vector2::new(pos.x + 0.7 * model.scale, pos.y + 0.4 * model.scale),
-    };
-    let eye_size = 0.2 * model.scale;
-    draw.quad().xy(pos_eye).w_h(eye_size, eye_size).color(RED);
-
-    let head = draw
-        .quad()
-        .x_y(pos.x, pos.y)
+    draw.quad()
+        .xy(pos)
         .w_h(model.scale, model.scale)
         .color(WHITE);
 
-    for &segment in &model.snake.tail {
+    let eye_size = 0.2 * model.scale;
+    let eye_direction = match model.snake.direction {
+        Direction::Up => Vector2::unit_y(),
+        Direction::Down => -Vector2::unit_y(),
+        Direction::Left => -Vector2::unit_x(),
+        Direction::Right => Vector2::unit_x(),
+    };
+    draw.quad()
+        .xy(pos + eye_direction * 0.3 * model.scale)
+        .w_h(eye_size, eye_size)
+        .color(RED);
+
+    for &segment in model.snake.tail.iter() {
         draw.quad()
             .xy(segment * model.scale)
             .w_h(model.scale, model.scale)
