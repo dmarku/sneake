@@ -1,5 +1,11 @@
 # Development Log
 
+## 2019-06-26
+
+- ran into first issues with ownership
+- typesafe pattern `match` is _really_ nice
+- the snake is now drawn, can be moved with arrow keys and its tail trails behind its head
+
 ## 2019-06-12
 
 - check out Nannou <https://nannou.cc>
