@@ -35,7 +35,7 @@ impl Axis for Direction {
 
 struct Snake {
     head: Vector2,
-    max_length: i8,
+    max_length: usize,
     direction: Direction,
     // the segments of the snake, except for the head
     tail: VecDeque<Vector2>,
@@ -89,7 +89,12 @@ fn direction_vector(direction: &Direction) -> Vector2 {
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
         let Snake { head: old_head, .. } = model.snake;
-        let head = old_head + direction_vector(&direction); 
+        let head = old_head + direction_vector(&direction);
+
+        model.snake.tail.push_front(old_head);
+        while model.snake.tail.len() > model.snake.max_length - 1 {
+            model.snake.tail.pop_back();
+        }
 
         model.snake.direction = direction;
         model.snake.head = head;
@@ -100,6 +105,13 @@ fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
     let draw = _app.draw();
 
     draw.background().color(DARK_BLUE);
+
+    for &segment in model.snake.tail.iter() {
+        draw.quad()
+            .xy(segment * model.scale)
+            .w_h(model.scale, model.scale)
+            .color(GRAY);
+    }
 
     let pos = model.snake.head * model.scale;
 
@@ -115,13 +127,6 @@ fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
         .xy(pos + eye_direction * 0.3 * model.scale)
         .w_h(eye_size, eye_size)
         .color(RED);
-
-    for &segment in model.snake.tail.iter() {
-        draw.quad()
-            .xy(segment * model.scale)
-            .w_h(model.scale, model.scale)
-            .color(LIGHT_GRAY);
-    }
 
     draw.to_frame(_app, &frame).unwrap();
     frame
