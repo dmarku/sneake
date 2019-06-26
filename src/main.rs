@@ -77,9 +77,22 @@ fn map_movement(key: Key) -> Option<Direction> {
     }
 }
 
+fn direction_vector(direction: &Direction) -> Vector2 {
+    match direction {
+        Direction::Up => Vector2::unit_y(),
+        Direction::Down => -Vector2::unit_y(),
+        Direction::Left => -Vector2::unit_x(),
+        Direction::Right => Vector2::unit_x(),
+    }
+}
+
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
+        let Snake { head: old_head, .. } = model.snake;
+        let head = old_head + direction_vector(&direction); 
+
         model.snake.direction = direction;
+        model.snake.head = head;
     }
 }
 
@@ -96,12 +109,8 @@ fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
         .color(WHITE);
 
     let eye_size = 0.2 * model.scale;
-    let eye_direction = match model.snake.direction {
-        Direction::Up => Vector2::unit_y(),
-        Direction::Down => -Vector2::unit_y(),
-        Direction::Left => -Vector2::unit_x(),
-        Direction::Right => Vector2::unit_x(),
-    };
+    let eye_direction = direction_vector(&model.snake.direction);
+
     draw.quad()
         .xy(pos + eye_direction * 0.3 * model.scale)
         .w_h(eye_size, eye_size)
