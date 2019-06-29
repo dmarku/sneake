@@ -5,6 +5,19 @@
 - ran into first issues with ownership
 - typesafe pattern `match` is _really_ nice
 - the snake is now drawn, can be moved with arrow keys and its tail trails behind its head
+- try out [`cargo-watch`](https://crates.io/crates/cargo-watch).
+
+  - Install with `cargo install cargo-watch`
+  - watches for source file changes and re-runs `cargo check` by default
+  - Automatically compiles and restarts game with `cargo check -x 'run --release'`
+  - ha, rebuilds on blog changes, add `--ignore '*.md'`
+  - final commandline:
+
+    ```
+    cargo check -x 'run --release' --ignore '*.md'
+    ```
+
+  - decided to switch to Nannou
 
 ## 2019-06-12
 
