@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use audrey::open;
-use nannou::audio::Buffer;
+use nannou::audio::{Buffer, Stream};
 use nannou::prelude::*;
 
 fn main() {
@@ -32,7 +32,7 @@ impl Axis for Direction {
 struct Model {
     scale: f32,
     snake: Snake,
-    stream: audio::Stream<Audio>,
+    stream: Stream<Audio>,
 }
 
 struct Snake {

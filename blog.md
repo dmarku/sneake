@@ -3,12 +3,15 @@
 ## 2019-07-02
 
 - got audio playback of WAV files working, with help from Nannou devs
+- found out that the output stream has to be moved to the model to save it from
+  destruction when leaving `model()`s scope
 
 ## 2019-06-26
 
 - ran into first issues with ownership
 - typesafe pattern `match` is _really_ nice
-- the snake is now drawn, can be moved with arrow keys and its tail trails behind its head
+- the snake is now drawn, can be moved with arrow keys and its tail trails
+  behind its head
 - try out [`cargo-watch`](https://crates.io/crates/cargo-watch).
 
   - Install with `cargo install cargo-watch`
