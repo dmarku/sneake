@@ -71,17 +71,18 @@ fn model(app: &App) -> Model {
     };
 
     let background_music =
-        open("ObservingTheStar.ogg").expect("couldn't load background music track");
+        open("ObservingTheStar.wav").expect("couldn't load background music track");
 
     let stream = app
         .audio
-        .new_output_stream(Audio { sound: None }, render_audio)
+        .new_output_stream(
+            Audio {
+                sound: Some(background_music),
+            },
+            render_audio,
+        )
         .build()
         .unwrap();
-
-    stream
-        .send(move |audio| audio.sound = Some(background_music))
-        .ok();
 
     Model {
         scale: 24.0,

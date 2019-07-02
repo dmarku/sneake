@@ -1,5 +1,9 @@
 # Development Log
 
+## 2019-07-02
+
+- got audio playback of WAV files working, with help from Nannou devs
+
 ## 2019-06-26
 
 - ran into first issues with ownership
