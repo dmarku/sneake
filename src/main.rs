@@ -1,15 +1,11 @@
-
-use nannou::prelude::*;
 use std::collections::VecDeque;
+
+use audrey::open;
+use nannou::audio::Buffer;
+use nannou::prelude::*;
+
 fn main() {
     nannou::app(model).update(update).view(view).run();
-}
-
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
 }
 
 trait Axis {
@@ -33,6 +29,12 @@ impl Axis for Direction {
     }
 }
 
+struct Model {
+    scale: f32,
+    snake: Snake,
+    stream: audio::Stream<Audio>,
+}
+
 struct Snake {
     head: Vector2,
     max_length: usize,
@@ -41,14 +43,20 @@ struct Snake {
     tail: VecDeque<Vector2>,
 }
 
-struct Model {
-    scale: f32,
-    snake: Snake,
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+struct Audio {
+    sound: Option<audrey::read::BufFileReader>,
 }
 
 /* initial model creation; this is similar to Arduino's `setup()` */
-fn model(_app: &App) -> Model {
-    _app.new_window()
+fn model(app: &App) -> Model {
+    app.new_window()
         .with_dimensions(800, 600)
         .with_title("Sneake")
         .key_pressed(key_pressed)
@@ -62,7 +70,45 @@ fn model(_app: &App) -> Model {
         tail: VecDeque::with_capacity(20),
     };
 
-    Model { scale: 24.0, snake }
+    let background_music =
+        open("ObservingTheStar.ogg").expect("couldn't load background music track");
+
+    let stream = app
+        .audio
+        .new_output_stream(Audio { sound: None }, render_audio)
+        .build()
+        .unwrap();
+
+    stream
+        .send(move |audio| audio.sound = Some(background_music))
+        .ok();
+
+    Model {
+        scale: 24.0,
+        snake,
+        stream,
+    }
+}
+
+fn render_audio(audio: &mut Audio, buffer: &mut Buffer) {
+    let len_frames = buffer.len_frames();
+    let mut frame_count = 0;
+    // 2-channel floating point single precision audio?
+    if let Some(ref mut sound) = audio.sound {
+        let file_frames = sound.frames::<[f32; 2]>().filter_map(Result::ok);
+
+        for (frame, file_frame) in buffer.frames_mut().zip(file_frames) {
+            for (sample, file_sample) in frame.iter_mut().zip(&file_frame) {
+                // add sound level sample by sample
+                *sample += *file_sample;
+            }
+            frame_count += 1;
+        }
+
+        if frame_count < len_frames {
+            audio.sound = None;
+        }
+    }
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {}
