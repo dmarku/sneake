@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
 use audrey::open;
-use nannou::audio::{Buffer, Stream};
 use nannou::prelude::*;
+use nannou_audio as audio;
 
 fn main() {
     nannou::app(model).update(update).view(view).run();
@@ -32,7 +32,7 @@ impl Axis for Direction {
 struct Model {
     scale: f32,
     snake: Snake,
-    stream: Stream<Audio>,
+    stream: audio::Stream<Audio>,
 }
 
 struct Snake {
@@ -73,14 +73,15 @@ fn model(app: &App) -> Model {
     let background_music =
         open("ObservingTheStar.wav").expect("couldn't load background music track");
 
-    let stream = app
-        .audio
+    let audio_host = audio::Host::new();
+
+    let stream = audio_host
         .new_output_stream(
             Audio {
                 sound: Some(background_music),
             },
-            render_audio,
         )
+        .render(render_audio)
         .build()
         .unwrap();
 
@@ -91,11 +92,11 @@ fn model(app: &App) -> Model {
     }
 }
 
-fn render_audio(audio: &mut Audio, buffer: &mut Buffer) {
+fn render_audio(audio: &mut Audio, buffer: &mut audio::Buffer) {
     let len_frames = buffer.len_frames();
     let mut frame_count = 0;
-    // 2-channel floating point single precision audio?
     if let Some(ref mut sound) = audio.sound {
+        // 2-channel floating point single precision audio?
         let file_frames = sound.frames::<[f32; 2]>().filter_map(Result::ok);
 
         for (frame, file_frame) in buffer.frames_mut().zip(file_frames) {
@@ -148,10 +149,10 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     }
 }
 
-fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
+fn view(_app: &App, model: &Model, frame: &Frame) {
     let draw = _app.draw();
 
-    draw.background().color(DARK_BLUE);
+    draw.background().color(DARKBLUE);
 
     for &segment in model.snake.tail.iter() {
         draw.quad()
@@ -176,5 +177,4 @@ fn view(_app: &App, model: &Model, frame: Frame) -> Frame {
         .color(RED);
 
     draw.to_frame(_app, &frame).unwrap();
-    frame
 }
