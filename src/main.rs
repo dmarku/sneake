@@ -8,27 +8,6 @@ fn main() {
     nannou::app(model).update(update).view(view).run();
 }
 
-trait Axis {
-    fn horizontal(&self) -> bool;
-    fn vertical(&self) -> bool;
-}
-
-impl Axis for Direction {
-    fn horizontal(&self) -> bool {
-        match self {
-            Direction::Up | Direction::Down => false,
-            Direction::Left | Direction::Right => true,
-        }
-    }
-
-    fn vertical(&self) -> bool {
-        match self {
-            Direction::Up | Direction::Down => true,
-            Direction::Left | Direction::Right => false,
-        }
-    }
-}
-
 struct Model {
     scale: f32,
     snake: Snake,
