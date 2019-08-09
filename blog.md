@@ -1,5 +1,21 @@
 # Development Log
 
+## 2019-08-08
+
+- upgraded nannou to v0.10
+- further tests with audio playback reveal playback gaps when too many sounds
+  are played at the same time
+  - problem occurs with aubrey + nannou_audio as well as `rodio`
+  - both use `cpal` for device access, so the problem might be there
+  - prime suspects are either filesystem performance or threading because
+    the issues occur earlier with many simultaneous sounds and when the
+    game process runs in the background
+- custom audio rendering requires input and output formats to match exactly
+  - mono file was played at twice the speed, with samples distributed to
+    both stereo output channels
+  - `rodio` crate allows audio file playback with correct sampling for both
+    WAV and Ogg Vorbis test files
+
 ## 2019-07-02
 
 - got audio playback of WAV files working, with help from Nannou devs
