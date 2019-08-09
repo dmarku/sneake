@@ -70,11 +70,11 @@ fn model(app: &App) -> Model {
         tail: VecDeque::with_capacity(20),
     };
 
-    let background_music =
-        open("ObservingTheStar.wav").expect("couldn't load background music track");
+    let assets = app.assets_path().expect("couldn't find assets path");
+    let music_file = assets.join("music").join("ObservingTheStar.wav");
+    let background_music = open(music_file).expect("couldn't load background music track");
 
     let audio_host = audio::Host::new();
-
     let stream = audio_host
         .new_output_stream(
             Audio {
