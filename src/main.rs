@@ -114,12 +114,20 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    let towers = vec![Tower {
-        direction: Direction::Down,
-        position: Vector2::new(4, 7),
-        interval: 6,
-        state: TowerState::Charging(2),
-    }];
+    let towers = vec![
+        Tower {
+            direction: Direction::Down,
+            position: Vector2::new(4, 7),
+            interval: 6,
+            state: TowerState::Charging(2),
+        },
+        Tower {
+            direction: Direction::Left,
+            position: Vector2::new(8, 8),
+            interval: 4,
+            state: TowerState::Charging(3),
+        },
+    ];
 
     Model {
         scale: 24.0,
