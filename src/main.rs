@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 
 use audrey::open;
 use nannou::prelude::*;
@@ -10,13 +10,13 @@ fn main() {
 
 struct Model {
     scale: f32,
-    snake: Snake,
+    game: Game,
     stream: audio::Stream<Audio>,
 }
 
-// implement some static level limits
-fn is_free<S: PartialOrd<i32>>(x: S, y: S) -> bool {
-    return x > 2 && x < 10 && y > 2 && y < 10;
+struct Game {
+    snake: Snake,
+    blocks: HashSet<(i32, i32)>,
 }
 
 struct Snake {
@@ -38,6 +38,11 @@ struct Audio {
     sound: Option<audrey::read::BufFileReader>,
 }
 
+// implement some static level limits
+fn is_free(blocks: &HashSet<(i32, i32)>, x: i32, y: i32) -> bool {
+    return x > 2 && x < 10 && y > 2 && y < 10 && !blocks.contains(&(x, y));
+}
+
 /* initial model creation; this is similar to Arduino's `setup()` */
 fn model(app: &App) -> Model {
     app.new_window()
@@ -54,24 +59,26 @@ fn model(app: &App) -> Model {
         tail: VecDeque::with_capacity(20),
     };
 
+    let mut blocks = HashSet::new();
+    blocks.insert((3, 3));
+    blocks.insert((7, 7));
+
     let assets = app.assets_path().expect("couldn't find assets path");
     let music_file = assets.join("music").join("ObservingTheStar.wav");
     let background_music = open(music_file).expect("couldn't load background music track");
 
     let audio_host = audio::Host::new();
     let stream = audio_host
-        .new_output_stream(
-            Audio {
+        .new_output_stream(Audio {
                 sound: Some(background_music),
-            },
-        )
+        })
         .render(render_audio)
         .build()
         .unwrap();
 
     Model {
         scale: 24.0,
-        snake,
+        game: Game { snake, blocks },
         stream,
     }
 }
@@ -120,35 +127,36 @@ fn direction_vector(direction: &Direction) -> Vector2 {
 
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
-        let Snake { head: old_head, .. } = model.snake;
-        let head = old_head + direction_vector(&direction);
+        let Game { snake, blocks, .. } = &mut model.game;
+        let Snake { head: old_head, .. } = snake;
+        let head = *old_head + direction_vector(&direction);
 
-        if is_free(head.x as i32, head.y as i32) {
-
-        model.snake.tail.push_front(old_head);
-        while model.snake.tail.len() > model.snake.max_length - 1 {
-            model.snake.tail.pop_back();
+        if is_free(&blocks, head.x as i32, head.y as i32) {
+            snake.tail.push_front(*old_head);
+            while snake.tail.len() > snake.max_length - 1 {
+                snake.tail.pop_back();
         }
 
-        model.snake.direction = direction;
-        model.snake.head = head;
+            snake.direction = direction;
+            snake.head = head;
     }
 }
 }
 
 fn view(_app: &App, model: &Model, frame: &Frame) {
     let draw = _app.draw();
+    let Game { snake, blocks, .. } = &model.game;
 
     draw.background().color(DARKBLUE);
 
-    for &segment in model.snake.tail.iter() {
+    for &segment in snake.tail.iter() {
         draw.quad()
             .xy(segment * model.scale)
             .w_h(model.scale, model.scale)
             .color(GRAY);
     }
 
-    let pos = model.snake.head * model.scale;
+    let pos = snake.head * model.scale;
 
     draw.quad()
         .xy(pos)
@@ -156,7 +164,7 @@ fn view(_app: &App, model: &Model, frame: &Frame) {
         .color(WHITE);
 
     let eye_size = 0.2 * model.scale;
-    let eye_direction = direction_vector(&model.snake.direction);
+    let eye_direction = direction_vector(&snake.direction);
 
     draw.quad()
         .xy(pos + eye_direction * 0.3 * model.scale)
