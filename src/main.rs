@@ -14,6 +14,11 @@ struct Model {
     stream: audio::Stream<Audio>,
 }
 
+// implement some static level limits
+fn is_free<S: PartialOrd<i32>>(x: S, y: S) -> bool {
+    return x > 2 && x < 10 && y > 2 && y < 10;
+}
+
 struct Snake {
     head: Vector2,
     max_length: usize,
@@ -118,6 +123,8 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
         let Snake { head: old_head, .. } = model.snake;
         let head = old_head + direction_vector(&direction);
 
+        if is_free(head.x as i32, head.y as i32) {
+
         model.snake.tail.push_front(old_head);
         while model.snake.tail.len() > model.snake.max_length - 1 {
             model.snake.tail.pop_back();
@@ -126,6 +133,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
         model.snake.direction = direction;
         model.snake.head = head;
     }
+}
 }
 
 fn view(_app: &App, model: &Model, frame: &Frame) {
