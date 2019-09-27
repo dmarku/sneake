@@ -267,8 +267,8 @@ fn view(app: &App, model: &Model, frame: &Frame) {
 
             let color = match tower.state {
                 TowerState::Firing => ORANGE,
-                TowerState::Charging(turns) if i <= turns => WHITE,
-                _ => BLACK,
+                TowerState::Charging(turns) if i < turns => BLACK,
+                _ => WHITE,
             };
 
             draw.quad()
