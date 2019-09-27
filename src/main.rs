@@ -98,7 +98,7 @@ fn model(app: &App) -> Model {
     };
 
     let mut blocks = HashSet::new();
-    blocks.insert((3, 3));
+    blocks.insert((4, 4));
     blocks.insert((7, 7));
 
     let assets = app.assets_path().expect("couldn't find assets path");
