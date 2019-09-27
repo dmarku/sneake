@@ -1,5 +1,16 @@
 # Development Log
 
+## 2019-08-15
+
+- read up on data-driven game design
+  - amethyst engine
+  - Katherine West's talk transcript (Chucklefish/Starbound dev)
+    https://kyren.github.io/2018/09/14/rustconf-talk.html
+- tried amethyst engine's pong example
+  - in debug mode, audio is shit there too (music "catches up" on input/respawn)
+  - release mode looks fine
+- release mode works fine on **EVERYTHING** :D
+
 ## 2019-08-08
 
 - upgraded nannou to v0.10

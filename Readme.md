@@ -7,3 +7,5 @@ Built with Rust 1.35, 2018 Edition
 Install Rust (_TODO: detailed instructions_)
 
 Run with `cargo run`
+
+Development build: `cargo watch -x 'run --release' --ignore '*.md`
