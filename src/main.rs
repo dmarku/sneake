@@ -47,15 +47,20 @@ struct Audio {
 }
 
 // implement some static level limits
-fn is_free(game: &Game, x: i32, y: i32) -> bool {
-    let inside_limits = x > 2 && x < 10 && y > 2 && y < 10;
-    let blocked_by_block = game.blocks.contains(&(x, y));
+fn is_passable(game: &Game, x: i32, y: i32) -> bool {
     let blocked_by_tower = game
         .towers
         .iter()
         .any(|t| x == t.position.x && y == t.position.y);
 
-    inside_limits && !blocked_by_block && !blocked_by_tower
+    is_free(game, x, y) && !blocked_by_tower
+}
+
+fn is_free(game: &Game, x: i32, y: i32) -> bool {
+    let inside_limits = x > 2 && x < 10 && y > 2 && y < 10;
+    let blocked_by_block = game.blocks.contains(&(x, y));
+
+    inside_limits && !blocked_by_block
 }
 
 /* initial model creation; this is similar to Arduino's `setup()` */
@@ -156,7 +161,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
         let snake = &model.game.snake;
         let head = snake.head + direction_vector(&direction);
 
-        if is_free(&model.game, head.x as i32, head.y as i32) {
+        if is_passable(&model.game, head.x as i32, head.y as i32) {
             let snake = &mut model.game.snake;
             snake.tail.push_front(snake.head);
             while snake.tail.len() > snake.max_length - 1 {
