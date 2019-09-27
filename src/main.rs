@@ -174,6 +174,15 @@ fn direction_vector(direction: &Direction) -> Vector2 {
     }
 }
 
+fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
+    match direction {
+        Direction::Up => Vector2::unit_y(),
+        Direction::Down => -Vector2::unit_y(),
+        Direction::Left => -Vector2::unit_x(),
+        Direction::Right => Vector2::unit_x(),
+    }
+}
+
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
         let snake = &model.game.snake;
@@ -259,6 +268,30 @@ fn view(app: &App, model: &Model, frame: &Frame) {
                 .w_h(model.scale * 0.1, model.scale * 0.1)
                 .rotate(Rad::from(angle).0)
                 .color(color);
+        }
+
+        match tower.state {
+            TowerState::Firing => {
+                // limit laser range because I'm afraid of shooting in an unblocked line at some point,
+                // triggering an infinite loop
+                let max_tower_range = 50;
+                let mut d = 1;
+                let mut pos = tower.position + direction_vector_int(&tower.direction) * d;
+                let size = match tower.direction {
+                    Direction::Up | Direction::Down => Vector2::new(0.1, 1.0),
+                    Direction::Left | Direction::Right => Vector2::new(1.0, 0.1),
+                };
+
+                while d < max_tower_range && is_passable(&model.game, pos.x, pos.y) {
+                    draw.quad()
+                        .x_y(pos.x as f32 * model.scale, pos.y as f32 * model.scale)
+                        .wh(size * model.scale)
+                        .color(ORANGE);
+                    d = d + 1;
+                    pos = tower.position + direction_vector_int(&tower.direction) * d;
+                }
+            }
+            _ => (),
         }
 
         draw.quad()
