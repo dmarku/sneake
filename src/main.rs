@@ -143,8 +143,8 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     }
 }
 
-fn view(_app: &App, model: &Model, frame: &Frame) {
-    let draw = _app.draw();
+fn view(app: &App, model: &Model, frame: &Frame) {
+    let draw = app.draw();
     let Game { snake, blocks, .. } = &model.game;
 
     draw.background().color(DARKBLUE);
@@ -182,5 +182,5 @@ fn view(_app: &App, model: &Model, frame: &Frame) {
         }
     }
 
-    draw.to_frame(_app, &frame).unwrap();
+    draw.to_frame(app, &frame).unwrap();
 }
