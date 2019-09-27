@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 
 use audrey::open;
+use nannou::math::{Deg, Rad};
 use nannou::prelude::*;
 use nannou_audio as audio;
 
@@ -28,13 +29,30 @@ struct Snake {
     tail: VecDeque<Vector2>,
 }
 
+enum TowerState {
+    Charging(i8),
+    Firing,
+}
+
 struct Tower {
     direction: Direction,
     interval: i8,
     position: Vector2<i32>,
-    countdown: i8,
+    state: TowerState,
 }
 
+fn tower_next(tower: &Tower) -> Tower {
+    Tower {
+        state: match tower.state {
+            TowerState::Firing => TowerState::Charging(tower.interval - 1),
+            TowerState::Charging(1) => TowerState::Firing,
+            TowerState::Charging(i) => TowerState::Charging(i - 1),
+        },
+        ..*tower
+    }
+}
+
+#[derive(Clone, Copy)]
 enum Direction {
     Up,
     Down,
@@ -97,10 +115,10 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let towers = vec![Tower {
-        direction: Direction::Up,
+        direction: Direction::Down,
         position: Vector2::new(4, 7),
         interval: 6,
-        countdown: 5,
+        state: TowerState::Charging(2),
     }];
 
     Model {
@@ -170,6 +188,8 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
 
             snake.direction = direction;
             snake.head = head;
+
+            model.game.towers = model.game.towers.iter().map(tower_next).collect();
         }
     }
 }
@@ -200,7 +220,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     draw.quad()
         .xy(pos + eye_direction * 0.3 * model.scale)
         .w_h(eye_size, eye_size)
-        .color(RED);
+        .color(TEAL);
 
     for x in -20..20 {
         for y in -20..20 {
@@ -214,13 +234,37 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     }
 
     for tower in model.game.towers.iter() {
+        let tower_position = Vector2::new(tower.position.x as f32, tower.position.y as f32);
+
         draw.quad()
-            .x_y(
-                tower.position.x as f32 * model.scale,
-                tower.position.y as f32 * model.scale,
-            )
+            .xy(tower_position * model.scale)
             .w_h(model.scale, model.scale)
-            .color(WHITE);
+            .color(DARKGREY);
+
+        let direction_indicator_position =
+            tower_position * model.scale + direction_vector(&tower.direction) * model.scale * 0.5;
+
+        for i in 1..tower.interval {
+            let angle = Deg(360.0 / tower.interval as f32 * i as f32);
+            let (sin, cos) = angle.sin_cos();
+
+            let color = match tower.state {
+                TowerState::Firing => ORANGE,
+                TowerState::Charging(turns) if i <= turns => WHITE,
+                _ => BLACK,
+            };
+
+            draw.quad()
+                .xy((tower_position + Vector2::new(0.3 * sin, 0.3 * cos)) * model.scale)
+                .w_h(model.scale * 0.1, model.scale * 0.1)
+                .rotate(Rad::from(angle).0)
+                .color(color);
+        }
+
+        draw.quad()
+            .xy(direction_indicator_position)
+            .w_h(0.2 * model.scale, 0.2 * model.scale)
+            .color(ORANGE);
     }
 
     draw.to_frame(app, &frame).unwrap();
