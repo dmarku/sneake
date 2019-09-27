@@ -17,6 +17,7 @@ struct Model {
 struct Game {
     snake: Snake,
     blocks: HashSet<(i32, i32)>,
+    towers: Vec<Tower>,
 }
 
 struct Snake {
@@ -25,6 +26,13 @@ struct Snake {
     direction: Direction,
     // the segments of the snake, except for the head
     tail: VecDeque<Vector2>,
+}
+
+struct Tower {
+    direction: Direction,
+    interval: i8,
+    position: Vector2<i32>,
+    countdown: i8,
 }
 
 enum Direction {
@@ -39,8 +47,15 @@ struct Audio {
 }
 
 // implement some static level limits
-fn is_free(blocks: &HashSet<(i32, i32)>, x: i32, y: i32) -> bool {
-    return x > 2 && x < 10 && y > 2 && y < 10 && !blocks.contains(&(x, y));
+fn is_free(game: &Game, x: i32, y: i32) -> bool {
+    let inside_limits = x > 2 && x < 10 && y > 2 && y < 10;
+    let blocked_by_block = game.blocks.contains(&(x, y));
+    let blocked_by_tower = game
+        .towers
+        .iter()
+        .any(|t| x == t.position.x && y == t.position.y);
+
+    inside_limits && !blocked_by_block && !blocked_by_tower
 }
 
 /* initial model creation; this is similar to Arduino's `setup()` */
@@ -76,9 +91,20 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
+    let towers = vec![Tower {
+        direction: Direction::Up,
+        position: Vector2::new(4, 7),
+        interval: 6,
+        countdown: 5,
+    }];
+
     Model {
         scale: 24.0,
-        game: Game { snake, blocks },
+        game: Game {
+            snake,
+            blocks,
+            towers,
+        },
         stream,
     }
 }
@@ -127,12 +153,12 @@ fn direction_vector(direction: &Direction) -> Vector2 {
 
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
-        let Game { snake, blocks, .. } = &mut model.game;
-        let Snake { head: old_head, .. } = snake;
-        let head = *old_head + direction_vector(&direction);
+        let snake = &model.game.snake;
+        let head = snake.head + direction_vector(&direction);
 
-        if is_free(&blocks, head.x as i32, head.y as i32) {
-            snake.tail.push_front(*old_head);
+        if is_free(&model.game, head.x as i32, head.y as i32) {
+            let snake = &mut model.game.snake;
+            snake.tail.push_front(snake.head);
             while snake.tail.len() > snake.max_length - 1 {
                 snake.tail.pop_back();
             }
@@ -145,7 +171,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
 
 fn view(app: &App, model: &Model, frame: &Frame) {
     let draw = app.draw();
-    let Game { snake, blocks, .. } = &model.game;
+    let snake = &model.game.snake;
 
     draw.background().color(DARKBLUE);
 
@@ -173,7 +199,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
 
     for x in -20..20 {
         for y in -20..20 {
-            if !is_free(&blocks, x, y) {
+            if !is_free(&model.game, x, y) {
                 draw.quad()
                     .x_y(x as f32 * model.scale, y as f32 * model.scale)
                     .w_h(model.scale, model.scale)
