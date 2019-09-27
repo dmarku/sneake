@@ -71,7 +71,14 @@ fn is_passable(game: &Game, x: i32, y: i32) -> bool {
         .iter()
         .any(|t| x == t.position.x && y == t.position.y);
 
-    is_free(game, x, y) && !blocked_by_tower
+    // TODO: fix i32/f32 conversion
+    let blocked_by_tail = game
+        .snake
+        .tail
+        .iter()
+        .any(|s| x as f32 == s.x && y as f32 == s.y);
+
+    is_free(game, x, y) && !blocked_by_tower && !blocked_by_tail
 }
 
 fn is_free(game: &Game, x: i32, y: i32) -> bool {
@@ -93,7 +100,7 @@ fn model(app: &App) -> Model {
     let snake = Snake {
         head: Vector2::new(5.0, 5.0),
         direction: Direction::Right,
-        max_length: 3,
+        max_length: 5,
         tail: VecDeque::with_capacity(20),
     };
 
