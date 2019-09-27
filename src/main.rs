@@ -70,7 +70,7 @@ fn model(app: &App) -> Model {
     let audio_host = audio::Host::new();
     let stream = audio_host
         .new_output_stream(Audio {
-                sound: Some(background_music),
+            sound: Some(background_music),
         })
         .render(render_audio)
         .build()
@@ -135,12 +135,12 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
             snake.tail.push_front(*old_head);
             while snake.tail.len() > snake.max_length - 1 {
                 snake.tail.pop_back();
-        }
+            }
 
             snake.direction = direction;
             snake.head = head;
+        }
     }
-}
 }
 
 fn view(_app: &App, model: &Model, frame: &Frame) {
@@ -170,6 +170,17 @@ fn view(_app: &App, model: &Model, frame: &Frame) {
         .xy(pos + eye_direction * 0.3 * model.scale)
         .w_h(eye_size, eye_size)
         .color(RED);
+
+    for x in -20..20 {
+        for y in -20..20 {
+            if !is_free(&blocks, x, y) {
+                draw.quad()
+                    .x_y(x as f32 * model.scale, y as f32 * model.scale)
+                    .w_h(model.scale, model.scale)
+                    .color(BLACK);
+            }
+        }
+    }
 
     draw.to_frame(_app, &frame).unwrap();
 }
