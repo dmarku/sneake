@@ -208,5 +208,15 @@ fn view(app: &App, model: &Model, frame: &Frame) {
         }
     }
 
+    for tower in model.game.towers.iter() {
+        draw.quad()
+            .x_y(
+                tower.position.x as f32 * model.scale,
+                tower.position.y as f32 * model.scale,
+            )
+            .w_h(model.scale, model.scale)
+            .color(WHITE);
+    }
+
     draw.to_frame(app, &frame).unwrap();
 }
