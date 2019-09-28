@@ -1,5 +1,25 @@
 # Development Log
 
+## 2019-09-28
+
+- Added: collision checks. If the snake tries to move into a grid cell that is
+  impassable, it won't commit the movement and no turn will be taken.
+- Added: level boundaries for collision. These are currently hard-coded and
+  very small. On a side note, I think the little space would be interesting for
+  very tight, limited puzzle designs.
+- Added: collision blocks. Certain grid cells can be made impassable by listing
+  them in the `blocks` property of the `Game` struct.
+- Added: Snake self-collision. The snake can't collide with its own tail. Unlike
+  classic snake, this will just be regarded as an invalid action and won't advance
+  the game instead of triggering a game over.
+- Added: **laser towers** as a first antagonist.
+  - each laser tower occupies one grid cell and is aimed in one of the four
+    cardinal directions
+  - each tower has a charge up time in turns. When fully charged, for one turn,
+    the tower fires a laser in a straight line in its aiming direction until it
+    hits an impassable block. After that, the charge cycle begins anew.
+- Added: data model and rendering for goals
+
 ## 2019-08-15
 
 - read up on data-driven game design
