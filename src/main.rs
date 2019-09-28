@@ -19,6 +19,7 @@ struct Game {
     snake: Snake,
     blocks: HashSet<(i32, i32)>,
     towers: Vec<Tower>,
+    goals: Vec<Vector2<i32>>,
 }
 
 struct Snake {
@@ -142,6 +143,7 @@ fn model(app: &App) -> Model {
             snake,
             blocks,
             towers,
+            goals: vec![Vector2::new(3, 9)],
         },
         stream,
     }
@@ -269,7 +271,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
             tower_position * model.scale + direction_vector(&tower.direction) * model.scale * 0.5;
 
         for i in 1..tower.interval {
-            let angle = Deg(360.0 / tower.interval as f32 * i as f32);
+            let angle = Deg(360.0 / (tower.interval - 1) as f32 * i as f32);
             let (sin, cos) = angle.sin_cos();
 
             let color = match tower.state {
@@ -313,6 +315,13 @@ fn view(app: &App, model: &Model, frame: &Frame) {
             .xy(direction_indicator_position)
             .w_h(0.2 * model.scale, 0.2 * model.scale)
             .color(ORANGE);
+    }
+
+    for goal in model.game.goals.iter() {
+        draw.quad()
+            .x_y(goal.x as f32 * model.scale, goal.y as f32 * model.scale)
+            .w_h(0.5 * model.scale, 0.5 * model.scale)
+            .color(GREEN);
     }
 
     draw.to_frame(app, &frame).unwrap();
