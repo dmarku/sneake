@@ -203,6 +203,8 @@ fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
         let snake = &model.game.snake;
+        snake.direction = direction;
+
         let head = snake.head + direction_vector(&direction);
 
         if is_passable(&model.game, head.x as i32, head.y as i32) {
@@ -212,7 +214,6 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
                 snake.tail.pop_back();
             }
 
-            snake.direction = direction;
             snake.head = head;
 
             model.game.towers = model.game.towers.iter().map(tower_next).collect();
