@@ -202,7 +202,7 @@ fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
 
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     if let Some(direction) = map_movement(key) {
-        let snake = &model.game.snake;
+        let ref mut snake = model.game.snake;
         snake.direction = direction;
 
         let head = snake.head + direction_vector(&direction);
