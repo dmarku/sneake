@@ -42,7 +42,7 @@ struct Tower {
     state: TowerState,
 }
 
-fn tower_next(tower: &Tower) -> Tower {
+fn tower_turn(tower: &Tower) -> Tower {
     Tower {
         state: match tower.state {
             TowerState::Firing => TowerState::Charging(tower.interval - 1),
@@ -216,7 +216,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
 
             snake.head = head;
 
-            model.game.towers = model.game.towers.iter().map(tower_next).collect();
+            model.game.towers = model.game.towers.iter().map(tower_turn).collect();
         }
     }
 }
@@ -226,6 +226,13 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     let snake = &model.game.snake;
 
     draw.background().color(DARKBLUE);
+    for goal in model.game.goals.iter() {
+        draw.ellipse()
+            .x_y(goal.x as f32 * model.scale, goal.y as f32 * model.scale)
+            .w_h(0.5 * model.scale, 0.5 * model.scale)
+            .no_fill()
+            .stroke_color(MEDIUMSLATEBLUE);
+    }
 
     for &segment in snake.tail.iter() {
         draw.quad()
@@ -316,13 +323,6 @@ fn view(app: &App, model: &Model, frame: &Frame) {
             .xy(direction_indicator_position)
             .w_h(0.2 * model.scale, 0.2 * model.scale)
             .color(ORANGE);
-    }
-
-    for goal in model.game.goals.iter() {
-        draw.quad()
-            .x_y(goal.x as f32 * model.scale, goal.y as f32 * model.scale)
-            .w_h(0.5 * model.scale, 0.5 * model.scale)
-            .color(GREEN);
     }
 
     draw.to_frame(app, &frame).unwrap();
