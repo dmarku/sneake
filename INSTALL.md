@@ -15,7 +15,7 @@
    cargo run --release
    ```
 
-   **Note:** this will download _a lot_ of dependencies and compile them. This may take a long time on the first run and requires a lot of disk space. On an Intel Core i5-7200U, this took about half an hour and multiple GB of space.
+   **Note:** this will download _a lot_ of dependencies and compile them. This may take a while on the first run. On an Intel i5-7200U, that's about 5 minutes and 700 MB of disk space.
 
 1. Play!
 
