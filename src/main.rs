@@ -98,15 +98,7 @@ fn is_free(game: &Game, x: i32, y: i32) -> bool {
     inside_limits && !blocked_by_block
 }
 
-/* initial model creation; this is similar to Arduino's `setup()` */
-fn model(app: &App) -> Model {
-    app.new_window()
-        .with_dimensions(800, 600)
-        .with_title("Sneake")
-        .key_pressed(key_pressed)
-        .build()
-        .unwrap();
-
+fn demo_level() -> Game {
     let snake = Snake {
         head: Vector2::new(5.0, 5.0),
         direction: Direction::Right,
@@ -117,19 +109,6 @@ fn model(app: &App) -> Model {
     let mut blocks = HashSet::new();
     blocks.insert((4, 4));
     blocks.insert((7, 7));
-
-    let assets = app.assets_path().expect("couldn't find assets path");
-    let music_file = assets.join("music").join("ObservingTheStar.wav");
-    let background_music = open(music_file).expect("couldn't load background music track");
-
-    let audio_host = audio::Host::new();
-    let stream = audio_host
-        .new_output_stream(Audio {
-            sound: Some(background_music),
-        })
-        .render(render_audio)
-        .build()
-        .unwrap();
 
     let towers = vec![
         Tower {
@@ -145,15 +124,40 @@ fn model(app: &App) -> Model {
             state: TowerState::Charging(3),
         },
     ];
-
-    Model {
-        scale: 24.0,
-        game: Game {
+    Game {
+        progress: Progress::Running,
             snake,
             blocks,
             towers,
             goals: vec![Vector2::new(3, 9)],
-        },
+    }
+}
+
+/* initial model creation; this is similar to Arduino's `setup()` */
+fn model(app: &App) -> Model {
+    app.new_window()
+        .with_dimensions(800, 600)
+        .with_title("Sneake")
+        .key_pressed(key_pressed)
+        .build()
+        .unwrap();
+
+    let assets = app.assets_path().expect("couldn't find assets path");
+    let music_file = assets.join("music").join("ObservingTheStar.wav");
+    let background_music = open(music_file).expect("couldn't load background music track");
+
+    let audio_host = audio::Host::new();
+    let stream = audio_host
+        .new_output_stream(Audio {
+            sound: Some(background_music),
+        })
+        .render(render_audio)
+        .build()
+        .unwrap();
+
+    Model {
+        scale: 24.0,
+        game: demo_level(),
         stream,
     }
 }
@@ -210,6 +214,13 @@ fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
 }
 
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
+    // reset game
+    // useful if game is won, failed or stuck
+    if key == Key::R {
+        model.game = demo_level();
+        return;
+    }
+
     if model.game.progress == Progress::Running {
     if let Some(direction) = map_movement(key) {
         let ref mut snake = model.game.snake;
