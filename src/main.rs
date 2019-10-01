@@ -225,7 +225,8 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     let draw = app.draw();
     let snake = &model.game.snake;
 
-    draw.background().color(DARKBLUE);
+    draw.background().color(WHITE);
+
     for goal in model.game.goals.iter() {
         draw.ellipse()
             .x_y(goal.x as f32 * model.scale, goal.y as f32 * model.scale)
@@ -238,7 +239,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
         draw.quad()
             .xy(segment * model.scale)
             .w_h(model.scale, model.scale)
-            .color(GRAY);
+            .color(DARKSLATEBLUE);
     }
 
     let pos = snake.head * model.scale;
@@ -246,15 +247,15 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     draw.quad()
         .xy(pos)
         .w_h(model.scale, model.scale)
-        .color(WHITE);
+        .color(SLATEBLUE);
 
     let eye_size = 0.2 * model.scale;
     let eye_direction = direction_vector(&snake.direction);
 
-    draw.quad()
+    draw.ellipse()
         .xy(pos + eye_direction * 0.3 * model.scale)
         .w_h(eye_size, eye_size)
-        .color(TEAL);
+        .color(WHITE);
 
     for x in -20..20 {
         for y in -20..20 {
@@ -262,7 +263,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
                 draw.quad()
                     .x_y(x as f32 * model.scale, y as f32 * model.scale)
                     .w_h(model.scale, model.scale)
-                    .color(BLACK);
+                    .color(LIGHTGRAY);
             }
         }
     }
