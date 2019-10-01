@@ -15,7 +15,16 @@ struct Model {
     stream: audio::Stream<Audio>,
 }
 
+// enable equality check for progress
+#[derive(PartialEq)]
+enum Progress {
+    Running,
+    Failure,
+    Victory,
+}
+
 struct Game {
+    progress: Progress,
     snake: Snake,
     blocks: HashSet<(i32, i32)>,
     towers: Vec<Tower>,
@@ -201,6 +210,7 @@ fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
 }
 
 fn key_pressed(_app: &App, model: &mut Model, key: Key) {
+    if model.game.progress == Progress::Running {
     if let Some(direction) = map_movement(key) {
         let ref mut snake = model.game.snake;
         snake.direction = direction;
@@ -216,9 +226,19 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
 
             snake.head = head;
 
+                if model
+                    .game
+                    .goals
+                    .iter()
+                    .any(|goal| goal.x == (head.x as i32) && goal.y == (head.y as i32))
+                {
+                    model.game.progress = Progress::Victory;
+                }
+
             model.game.towers = model.game.towers.iter().map(tower_turn).collect();
         }
     }
+}
 }
 
 fn view(app: &App, model: &Model, frame: &Frame) {
@@ -325,6 +345,23 @@ fn view(app: &App, model: &Model, frame: &Frame) {
             .w_h(0.2 * model.scale, 0.2 * model.scale)
             .color(ORANGE);
     }
+
+    let w = app.window_rect().w();
+
+    let failure_bg = Srgba::new(0.5, 0.0, 0.0, 0.5);
+    let victory_bg = Srgba::new(0.0, 0.5, 0.0, 0.5);
+
+    match model.game.progress {
+        Progress::Failure => {
+            draw.quad().w_h(w, 300.0).x_y(0.0, 0.0).color(failure_bg);
+            draw.text("You Lost!").font_size(64).color(WHITE);
+        }
+        Progress::Victory => {
+            draw.quad().w_h(w, 300.0).x_y(0.0, 0.0).color(victory_bg);
+            draw.text("You Won!").font_size(64).color(WHITE);
+        }
+        Progress::Running => (),
+    };
 
     draw.to_frame(app, &frame).unwrap();
 }
