@@ -220,8 +220,10 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             let increment: Vector2<i32> = tower.direction.into();
             for d in 1..tower.range {
                 let pos = tower.position + increment * (d as i32);
-                if let Some(Obstacle::Snake) = is_blocked(&model.game, &pos) {
-                    model.game.progress = Progress::Failure;
+                match is_blocked(&model.game, &pos) {
+                    Some(Obstacle::Snake) => model.game.progress = Progress::Failure,
+                    Some(_) => break,
+                    None => (),
                 }
             }
         }
