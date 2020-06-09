@@ -278,7 +278,7 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
 
                 // check if snake is hit by any laser beam
                 for tower in &model.game.towers {
-                    if let TowerState::Firing = tower.state {
+                    if matches!(tower.state, TowerState::Firing) {
                         let increment: Vector2<i32> = tower.direction.into();
                         let path =
                             (1..tower.range).map(|d| tower.position + increment * (d as i32));
