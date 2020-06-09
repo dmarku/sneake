@@ -214,21 +214,7 @@ fn render_audio(audio: &mut Audio, buffer: &mut audio::Buffer) {
     }
 }
 
-fn update(_app: &App, model: &mut Model, _update: Update) {
-    for tower in &model.game.towers {
-        if let TowerState::Firing = tower.state {
-            let increment: Vector2<i32> = tower.direction.into();
-            for d in 1..tower.range {
-                let pos = tower.position + increment * (d as i32);
-                match is_blocked(&model.game, &pos) {
-                    Some(Obstacle::Snake) => model.game.progress = Progress::Failure,
-                    Some(_) => break,
-                    None => (),
-                }
-            }
-        }
-    }
-}
+fn update(_app: &App, _model: &mut Model, _update: Update) {}
 
 fn map_movement(key: Key) -> Option<Direction> {
     match key {
@@ -289,6 +275,22 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
                 };
 
                 model.game.towers = model.game.towers.iter().map(update_tower).collect();
+
+                // check if snake is hit by any laser beam
+                for tower in &model.game.towers {
+                    if let TowerState::Firing = tower.state {
+                        let increment: Vector2<i32> = tower.direction.into();
+                        let path =
+                            (1..tower.range).map(|d| tower.position + increment * (d as i32));
+                        for point in path {
+                            match is_blocked(&model.game, &point) {
+                                Some(Obstacle::Snake) => model.game.progress = Progress::Failure,
+                                Some(_) => break,
+                                None => (),
+                            }
+                        }
+                    }
+                }
             }
 
             model.game.snake.direction = direction;
