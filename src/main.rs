@@ -30,12 +30,20 @@ enum Obstacle {
     Snake,
 }
 
+struct Region {
+    top: i32,
+    bottom: i32,
+    left: i32,
+    right: i32,
+}
+
 struct Game {
     progress: Progress,
     snake: Snake,
     blocks: HashSet<Vector2<i32>>,
     towers: Vec<Tower>,
     goals: Vec<Vector2<i32>>,
+    boundaries: Region,
 }
 
 struct Snake {
@@ -101,7 +109,9 @@ fn is_blocked(game: &Game, position: &Vector2<i32>) -> Option<Obstacle> {
 
 fn is_free(game: &Game, position: &Vector2<i32>) -> bool {
     let Vector2 { x, y } = *position;
-    let inside_limits = x > 2 && x < 10 && y > 2 && y < 10;
+    let ref boundaries = game.boundaries;
+    let inside_limits =
+        x > boundaries.left && x < boundaries.right && y > boundaries.top && y < boundaries.bottom;
     let blocked_by_block = game.blocks.contains(position);
 
     inside_limits && !blocked_by_block
@@ -138,6 +148,12 @@ fn create_demo_level() -> Game {
 
     Game {
         progress: Progress::Running,
+        boundaries: Region {
+            top: 2,
+            bottom: 10,
+            left: 2,
+            right: 10,
+        },
         snake,
         blocks,
         towers,
