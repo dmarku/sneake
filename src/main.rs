@@ -26,7 +26,7 @@ enum Progress {
 
 enum Obstacle {
     Tower,
-    Wall,
+    Block,
     Snake,
 }
 
@@ -103,7 +103,7 @@ fn is_blocked(game: &Game, position: &Vector2<i32>) -> Option<Obstacle> {
 
     match is_free(game, position) {
         true => None,
-        false => Some(Obstacle::Wall),
+        false => Some(Obstacle::Block),
     }
 }
 
