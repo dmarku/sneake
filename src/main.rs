@@ -17,7 +17,6 @@ struct Model {
 }
 
 // enable equality check for progress
-#[derive(PartialEq)]
 enum Progress {
     Running,
     Failure,
@@ -100,6 +99,10 @@ fn is_blocked(game: &Game, position: &Vector2<i32>) -> Option<Obstacle> {
     if game.snake.tail.iter().any(|segment| *segment == *position) {
         return Some(Obstacle::Snake);
     };
+
+    if game.snake.head == *position {
+        return Some(Obstacle::Snake);
+    }
 
     match is_free(game, position) {
         true => None,
@@ -211,7 +214,19 @@ fn render_audio(audio: &mut Audio, buffer: &mut audio::Buffer) {
     }
 }
 
-fn update(_app: &App, _model: &mut Model, _update: Update) {}
+fn update(_app: &App, model: &mut Model, _update: Update) {
+    for tower in &model.game.towers {
+        if let TowerState::Firing = tower.state {
+            let increment: Vector2<i32> = tower.direction.into();
+            for d in 1..tower.range {
+                let pos = tower.position + increment * (d as i32);
+                if let Some(Obstacle::Snake) = is_blocked(&model.game, &pos) {
+                    model.game.progress = Progress::Failure;
+                }
+            }
+        }
+    }
+}
 
 fn map_movement(key: Key) -> Option<Direction> {
     match key {
