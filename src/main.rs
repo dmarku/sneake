@@ -1,7 +1,8 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::HashSet;
+use std::ops::Neg;
 
 use audrey::open;
-use nannou::math::{Deg, Rad};
+use nannou::math::Rad;
 use nannou::prelude::*;
 use nannou_audio as audio;
 
@@ -23,20 +24,26 @@ enum Progress {
     Victory,
 }
 
+enum Obstacle {
+    Tower,
+    Wall,
+    Snake,
+}
+
 struct Game {
     progress: Progress,
     snake: Snake,
-    blocks: HashSet<(i32, i32)>,
+    blocks: HashSet<Vector2<i32>>,
     towers: Vec<Tower>,
     goals: Vec<Vector2<i32>>,
 }
 
 struct Snake {
-    head: Vector2,
+    head: Vector2<i32>,
     max_length: usize,
     direction: Direction,
     // the segments of the snake, except for the head
-    tail: VecDeque<Vector2>,
+    tail: Vec<Vector2<i32>>,
 }
 
 enum TowerState {
@@ -49,9 +56,10 @@ struct Tower {
     interval: i8,
     position: Vector2<i32>,
     state: TowerState,
+    range: u8,
 }
 
-fn tower_turn(tower: &Tower) -> Tower {
+fn update_tower(tower: &Tower) -> Tower {
     Tower {
         state: match tower.state {
             TowerState::Firing => TowerState::Charging(tower.interval - 1),
@@ -75,69 +83,73 @@ struct Audio {
 }
 
 // implement some static level limits
-fn is_passable(game: &Game, x: i32, y: i32) -> bool {
-    let blocked_by_tower = game
-        .towers
-        .iter()
-        .any(|t| x == t.position.x && y == t.position.y);
+fn is_blocked(game: &Game, position: &Vector2<i32>) -> Option<Obstacle> {
+    if game.towers.iter().any(|tower| tower.position == *position) {
+        return Some(Obstacle::Tower);
+    };
 
     // TODO: fix i32/f32 conversion
-    let blocked_by_tail = game
-        .snake
-        .tail
-        .iter()
-        .any(|s| x as f32 == s.x && y as f32 == s.y);
+    if game.snake.tail.iter().any(|segment| *segment == *position) {
+        return Some(Obstacle::Snake);
+    };
 
-    is_free(game, x, y) && !blocked_by_tower && !blocked_by_tail
+    match is_free(game, position) {
+        true => None,
+        false => Some(Obstacle::Wall),
+    }
 }
 
-fn is_free(game: &Game, x: i32, y: i32) -> bool {
+fn is_free(game: &Game, position: &Vector2<i32>) -> bool {
+    let Vector2 { x, y } = *position;
     let inside_limits = x > 2 && x < 10 && y > 2 && y < 10;
-    let blocked_by_block = game.blocks.contains(&(x, y));
+    let blocked_by_block = game.blocks.contains(position);
 
     inside_limits && !blocked_by_block
 }
 
-fn demo_level() -> Game {
+fn create_demo_level() -> Game {
     let snake = Snake {
-        head: Vector2::new(5.0, 5.0),
+        head: Vector2 { x: 5, y: 5 },
         direction: Direction::Right,
         max_length: 5,
-        tail: VecDeque::with_capacity(20),
+        tail: Vec::new(),
     };
 
     let mut blocks = HashSet::new();
-    blocks.insert((4, 4));
-    blocks.insert((7, 7));
+    blocks.insert(Vector2 { x: 4, y: 4 });
+    blocks.insert(Vector2 { x: 7, y: 7 });
 
     let towers = vec![
         Tower {
             direction: Direction::Down,
-            position: Vector2::new(4, 7),
+            position: Vector2 { x: 4, y: 7 },
             interval: 6,
             state: TowerState::Charging(2),
+            range: 50,
         },
         Tower {
             direction: Direction::Left,
-            position: Vector2::new(8, 8),
+            position: Vector2 { x: 8, y: 8 },
             interval: 4,
             state: TowerState::Charging(3),
+            range: 50,
         },
     ];
+
     Game {
         progress: Progress::Running,
-            snake,
-            blocks,
-            towers,
-            goals: vec![Vector2::new(3, 9)],
+        snake,
+        blocks,
+        towers,
+        goals: vec![Vector2 { x: 3, y: 9 }],
     }
 }
 
 /* initial model creation; this is similar to Arduino's `setup()` */
 fn model(app: &App) -> Model {
     app.new_window()
-        .with_dimensions(800, 600)
-        .with_title("Sneake")
+        .title("Sneake")
+        .size(800, 600)
         .key_pressed(key_pressed)
         .build()
         .unwrap();
@@ -157,7 +169,7 @@ fn model(app: &App) -> Model {
 
     Model {
         scale: 24.0,
-        game: demo_level(),
+        game: create_demo_level(),
         stream,
     }
 }
@@ -195,21 +207,14 @@ fn map_movement(key: Key) -> Option<Direction> {
     }
 }
 
-fn direction_vector(direction: &Direction) -> Vector2 {
-    match direction {
-        Direction::Up => Vector2::unit_y(),
-        Direction::Down => -Vector2::unit_y(),
-        Direction::Left => -Vector2::unit_x(),
-        Direction::Right => Vector2::unit_x(),
-    }
-}
-
-fn direction_vector_int(direction: &Direction) -> Vector2<i32> {
-    match direction {
-        Direction::Up => Vector2::unit_y(),
-        Direction::Down => -Vector2::unit_y(),
-        Direction::Left => -Vector2::unit_x(),
-        Direction::Right => Vector2::unit_x(),
+impl<S: Neg<Output = S> + One + Zero> From<Direction> for Vector2<S> {
+    fn from(direction: Direction) -> Self {
+        match direction {
+            Direction::Up => Vector2::<S>::unit_y(),
+            Direction::Down => -Vector2::<S>::unit_y(),
+            Direction::Left => -Vector2::<S>::unit_x(),
+            Direction::Right => Vector2::<S>::unit_x(),
+        }
     }
 }
 
@@ -217,63 +222,78 @@ fn key_pressed(_app: &App, model: &mut Model, key: Key) {
     // reset game
     // useful if game is won, failed or stuck
     if key == Key::R {
-        model.game = demo_level();
+        model.game = create_demo_level();
         return;
     }
 
-    if model.game.progress == Progress::Running {
-    if let Some(direction) = map_movement(key) {
-        let ref mut snake = model.game.snake;
-        snake.direction = direction;
+    if matches!(model.game.progress, Progress::Running) {
+        if let Some(direction) = map_movement(key) {
+            let ref snake = model.game.snake;
+            let new_head = snake.head + direction.into();
 
-        let head = snake.head + direction_vector(&direction);
+            if is_blocked(&model.game, &new_head).is_none() {
+                /*
+                snake.tail.push_front(snake.head);
+                while snake.tail.len() > snake.max_length - 1 {
+                    snake.tail.pop_back();
+                }
+                */
 
-        if is_passable(&model.game, head.x as i32, head.y as i32) {
-            let snake = &mut model.game.snake;
-            snake.tail.push_front(snake.head);
-            while snake.tail.len() > snake.max_length - 1 {
-                snake.tail.pop_back();
+                let new_snake = Snake {
+                    head: new_head,
+                    tail: Some(snake.head)
+                        .into_iter()
+                        .chain(snake.tail.to_owned())
+                        .take(snake.max_length - 1)
+                        .collect(),
+                    ..*snake
+                };
+
+                model.game.snake = new_snake;
+
+                if model.game.goals.iter().any(|goal| *goal == new_head) {
+                    model.game.progress = Progress::Victory;
+                };
+
+                model.game.towers = model.game.towers.iter().map(update_tower).collect();
             }
 
-            snake.head = head;
-
-                if model
-                    .game
-                    .goals
-                    .iter()
-                    .any(|goal| goal.x == (head.x as i32) && goal.y == (head.y as i32))
-                {
-                    model.game.progress = Progress::Victory;
-                }
-
-            model.game.towers = model.game.towers.iter().map(tower_turn).collect();
+            model.game.snake.direction = direction;
         }
     }
 }
+
+fn draw_segment(draw: &nannou::draw::Draw, model: &Model, segment: &Vector2<i32>) {
+    draw.quad()
+        .xy(pt2::<f32>(segment.x as f32, segment.y as f32) * model.scale)
+        .w_h(model.scale, model.scale)
+        .color(DARKSLATEBLUE);
 }
 
-fn view(app: &App, model: &Model, frame: &Frame) {
+// helper function to convert to floating-point vectors for rendering
+fn vec2f(v: &Vector2<i32>) -> Vector2<f32> {
+    Vector2::new(v.x as f32, v.y as f32)
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     let snake = &model.game.snake;
 
     draw.background().color(WHITE);
 
-    for goal in model.game.goals.iter() {
+    for &goal in &model.game.goals {
         draw.ellipse()
-            .x_y(goal.x as f32 * model.scale, goal.y as f32 * model.scale)
+            .xy(vec2f(&goal) * model.scale)
             .w_h(0.5 * model.scale, 0.5 * model.scale)
             .no_fill()
             .stroke_color(MEDIUMSLATEBLUE);
     }
 
-    for &segment in snake.tail.iter() {
-        draw.quad()
-            .xy(segment * model.scale)
-            .w_h(model.scale, model.scale)
-            .color(DARKSLATEBLUE);
+    for segment in &snake.tail {
+        draw_segment(&draw, model, segment);
     }
 
-    let pos = snake.head * model.scale;
+    let pos: Vector2 = vec2f(&snake.head) * model.scale;
 
     draw.quad()
         .xy(pos)
@@ -281,16 +301,18 @@ fn view(app: &App, model: &Model, frame: &Frame) {
         .color(SLATEBLUE);
 
     let eye_size = 0.2 * model.scale;
-    let eye_direction = direction_vector(&snake.direction);
+    let dir: Vector2 = snake.direction.into();
+    let eye_position: Vector2 = pos + dir * 0.3 * model.scale;
 
     draw.ellipse()
-        .xy(pos + eye_direction * 0.3 * model.scale)
+        .xy(eye_position)
         .w_h(eye_size, eye_size)
         .color(WHITE);
 
+    // those are kind of arbitrary values for boundary limits
     for x in -20..20 {
         for y in -20..20 {
-            if !is_free(&model.game, x, y) {
+            if !is_free(&model.game, &Vector2 { x, y }) {
                 draw.quad()
                     .x_y(x as f32 * model.scale, y as f32 * model.scale)
                     .w_h(model.scale, model.scale)
@@ -299,20 +321,21 @@ fn view(app: &App, model: &Model, frame: &Frame) {
         }
     }
 
-    for tower in model.game.towers.iter() {
-        let tower_position = Vector2::new(tower.position.x as f32, tower.position.y as f32);
+    for tower in &model.game.towers {
+        let position = vec2f(&tower.position);
+        let direction: Vector2 = tower.direction.into();
 
+        // draw base
         draw.quad()
-            .xy(tower_position * model.scale)
+            .xy(position * model.scale)
             .w_h(model.scale, model.scale)
             .color(DARKGREY);
 
-        let direction_indicator_position =
-            tower_position * model.scale + direction_vector(&tower.direction) * model.scale * 0.5;
+        let direction_indicator_position = position * model.scale + direction * model.scale * 0.5;
 
+        // draw charge indicator
         for i in 1..tower.interval {
-            let angle = Deg(360.0 / (tower.interval - 1) as f32 * i as f32);
-            let (sin, cos) = angle.sin_cos();
+            let angle = Rad::full_turn() * (i as f32 / (tower.interval - 1) as f32);
 
             let color = match tower.state {
                 TowerState::Firing => ORANGE,
@@ -321,31 +344,41 @@ fn view(app: &App, model: &Model, frame: &Frame) {
             };
 
             draw.quad()
-                .xy((tower_position + Vector2::new(0.3 * sin, 0.3 * cos)) * model.scale)
+                .xy((position + Vector2::from_angle(angle.0) * 0.3) * model.scale)
                 .w_h(model.scale * 0.1, model.scale * 0.1)
-                .rotate(Rad::from(angle).0)
                 .color(color);
         }
 
+        // draw laser if tower is firing
         match tower.state {
             TowerState::Firing => {
-                // limit laser range because I'm afraid of shooting in an unblocked line at some point,
-                // triggering an infinite loop
-                let max_tower_range = 50;
-                let mut d = 1;
-                let mut pos = tower.position + direction_vector_int(&tower.direction) * d;
+                let increment: Vector2<i32> = tower.direction.into();
+                let tile_size = 1.0;
+                let beam_width = 0.1;
+
                 let size = match tower.direction {
-                    Direction::Up | Direction::Down => Vector2::new(0.1, 1.0),
-                    Direction::Left | Direction::Right => Vector2::new(1.0, 0.1),
+                    Direction::Up | Direction::Down => Vector2 {
+                        x: beam_width,
+                        y: tile_size,
+                    },
+                    Direction::Left | Direction::Right => Vector2 {
+                        x: tile_size,
+                        y: beam_width,
+                    },
                 };
 
-                while d < max_tower_range && is_passable(&model.game, pos.x, pos.y) {
+                // limit laser range because I'm afraid of shooting in an unblocked line at some point,
+                // triggering an infinite loop
+                for d in 1..tower.range {
+                    let pos = tower.position + increment * (d as i32);
+                    if is_blocked(&model.game, &pos).is_some() {
+                        break;
+                    }
+
                     draw.quad()
-                        .x_y(pos.x as f32 * model.scale, pos.y as f32 * model.scale)
+                        .xy(vec2f(&pos) * model.scale)
                         .wh(size * model.scale)
                         .color(ORANGE);
-                    d = d + 1;
-                    pos = tower.position + direction_vector_int(&tower.direction) * d;
                 }
             }
             _ => (),
